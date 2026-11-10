@@ -100,13 +100,14 @@ textarea{width:100%;min-height:84px;border:2px solid var(--line);border-radius:1
 .qrc h2{justify-content:center;margin:0 0 10px}#qrbox{display:grid;place-items:center;min-height:120px;margin-bottom:10px;word-break:break-all}
 .qrc input{width:min(80vw,420px);font:inherit;font-size:.85rem;border:2px solid #ccd;border-radius:8px;padding:6px 8px;background:#fff;color:#111}
 .qrc p{color:#445;font-size:.85rem;margin:8px 0}
+.opts button.sel{background:color-mix(in srgb,var(--a) 22%,var(--bg));border-color:var(--a);font-weight:700}
 </style>
 </head>
 <body>
 <div class="wrap">
 <nav id="nav" aria-label="페이지"></nav>
 <main id="page"></main>
-<p class="foot">입력한 답은 이 기기에만 저장돼요. <button id="reset">내 기록 지우기</button> <br><span id="ver">버전 v5 (다시 풀기 포함)</span></p>
+<p class="foot">입력한 답은 이 기기에만 저장돼요. <button id="reset">내 기록 지우기</button> <br><span id="ver">버전 v6 (채점 버튼 포함)</span></p>
 </div>
 <script>
 const O1=[`Disasters come suddenly, and technology is not enough.`,`Selfish behavior hurts the whole community.`,`Stay calm, follow rules, and help others.`,`Cooperation makes a community safer.`];
@@ -147,6 +148,7 @@ const D=[
 ];
 
 const $=s=>document.querySelector(s);
+const GR={};let gArm=false;
 const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let st={};try{st=JSON.parse(localStorage.getItem('rv6_7s')||'{}')}catch(e){}
 Object.keys(st).forEach(k=>{if(/^[aw]\d/.test(k))delete st[k]});
@@ -159,11 +161,12 @@ function render(){
   document.documentElement.style.setProperty('--a',p.c);
   $('#nav').innerHTML=D.map((d,i)=>`<a href="#${d.id}" style="--c:${d.c}" ${i===pi?'aria-current="page"':''}><span class="em">${d.e}</span><span>Page ${i+1}<small>${d.k}</small></span></a>`).join('');
   let h=`<div class="sid"><label>학번 <input id="sid" inputmode="numeric" maxlength="5" placeholder="30112" value="${esc(st.sid||'')}"></label><label>이름 <input id="nm" maxlength="10" placeholder="홍길동" value="${esc(st.nm||'')}"></label><small>입력한 내용은 이 기기에만 저장돼요.</small></div>`;
-  h+=`<div class="hero"><div><p>Lesson 6-7 · Reading Review</p><h1>${p.e} ${p.t}</h1><p>${p.k}</p></div><div class="score"><span id="sc">${right(p,pi)}</span> / ${total(p)}<small>맞힌 문제</small><button class="btn" id="rs" style="margin-top:8px;background:#fff;color:#111;font-size:.85rem;padding:5px 12px">🔄 다시 풀기</button></div></div>`;
+  h+=`<div class="hero"><div><p>Lesson 6-7 · Reading Review</p><h1>${p.e} ${p.t}</h1><p>${p.k}</p></div><div class="score"><span id="sc">${GR[pi]?right(p,pi):'–'}</span> / ${total(p)}<small>${GR[pi]?'맞힌 문제':'채점 전'}</small><button class="btn" id="rs" style="margin-top:8px;background:#fff;color:#111;font-size:.85rem;padding:5px 12px">🔄 다시 풀기</button></div></div>`;
   h+=`<section><h2><i>1</i>한눈에 보기</h2><p class="desc">그림과 화살표를 따라 글의 흐름을 읽어 보세요.</p><div class="flow">`+p.flow.map((s,i)=>(i?'<div class="arrow">➜</div>':'')+`<div class="stage"><b>${s.h}</b>`+s.n.map(n=>`<div class="node ${n[2]||''}"><em>${n[0]}</em><span>${n[1]}</span></div>`).join('')+`</div>`).join('')+`</div></section>`;
   h+=`<section><h2><i>2</i>핵심 어휘 카드</h2><p class="desc">카드를 누르면 뜻과 본문 예문이 나와요. 뜻을 먼저 떠올려 보세요.</p><div class="vocab">`+p.vocab.map((v,k)=>`<button class="card" data-v="${k}"><b>${v[0]}</b><span>눌러서 뒤집기</span></button>`).join('')+`</div></section>`;
   h+=`<section><details><summary>📖 본문 다시 읽기 (핵심 어휘 표시)</summary>`+p.txt.map((t,i)=>`<div class="para"><u>${i+1}</u><div>${t}</div></div>`).join('')+`</details></section>`;
-  p.qs.forEach((s,si)=>{h+=`<section><h2><i>${si+3}</i>${s.h}</h2><p class="desc">${s.d}</p>`+s.i.map((it,k)=>{const key='a'+pi+si+k,v=st[key];return `<div class="q"><p>${it[0]}</p><div class="opts">`+it[1].map((o,oi)=>`<button data-q="${key}" data-o="${oi}" data-r="${it[2]}" class="${v===oi?(oi===it[2]?'ok':'no'):''}">${o}</button>`).join('')+`</div></div>`}).join('')+`</section>`});
+  p.qs.forEach((s,si)=>{h+=`<section><h2><i>${si+3}</i>${s.h}</h2><p class="desc">${s.d}</p>`+s.i.map((it,k)=>{const key='a'+pi+si+k,v=st[key];return `<div class="q"><p>${it[0]}</p><div class="opts">`+it[1].map((o,oi)=>`<button data-q="${key}" data-o="${oi}" data-r="${it[2]}" class="${GR[pi]?(v===oi?(oi===it[2]?'ok':'no'):(oi===it[2]?'key':'')):(v===oi?'sel':'')}">${o}</button>`).join('')+`</div></div>`}).join('')+`</section>`});
+  h+=`<section id="gsec"><div class="q" style="text-align:center">`+(GR[pi]?`<p style="font-size:1.2rem">📊 결과: <b>${right(p,pi)} / ${total(p)}</b>${right(p,pi)===total(p)?' 🎉 모두 맞혔어요!':''}</p><p class="desc">초록 테두리는 정답이에요. 틀린 문제를 다시 확인해 보세요.</p><button class="btn" id="gre">🔁 문제 다시 풀기</button>`:`<p>다 풀었으면 채점해 보세요!</p><button class="btn" id="grd" style="font-size:1.05rem;padding:10px 22px">✅ 채점하기</button><p class="desc" id="gmsg"></p>`)+`</div></section>`;
   h+=`<section><h2><i>${p.qs.length+3}</i>영어로 답 쓰기</h2><p class="desc">힌트 표현을 활용해 직접 써 보고, 예시 답안과 비교해 보세요.</p>`+p.w.map((w,k)=>`<div class="w"><p>${k+1}. ${w[0]}</p><div class="chips">`+w[1].map(c=>`<span>${c}</span>`).join('')+`</div><textarea data-w="w${pi}${k}" aria-label="답 쓰기" placeholder="Write your answer here.">${esc(st['w'+pi+k]||'')}</textarea><button class="btn" data-m="${k}">예시 답안 보기</button><div class="model" id="m${k}">${w[2]}</div></div>`).join('')+`</section>`;
   h+=`<section><h2><i>${p.qs.length+4}</i>내 결과 선생님께 보내기</h2><p class="desc">세 페이지의 점수와 영어 답이 한 번에 만들어져요. 복사해서 선생님이 알려 준 곳(구글 클래스룸 등)에 붙여 넣으세요.</p><button class="btn" id="mk">결과 만들고 복사하기</button><textarea id="out" readonly aria-label="내 결과" style="margin-top:10px;min-height:150px" placeholder="여기에 결과가 나와요."></textarea><small id="cp" class="desc"></small></section>`;
   $('#page').innerHTML=h;window.scrollTo(0,0);
@@ -177,11 +180,15 @@ document.addEventListener('click',e=>{
   const v=e.target.closest('[data-v]');
   if(v){const w=D[cur()].vocab[v.dataset.v],f=v.classList.toggle('flip');v.innerHTML=f?`<span class="ko">${w[1]}</span><span class="ex">${w[2]}</span>`:`<b>${w[0]}</b><span>눌러서 뒤집기</span>`;return}
   const q=e.target.closest('[data-q]');
-  if(q){const o=+q.dataset.o;st[q.dataset.q]=o;save();q.parentNode.querySelectorAll('button').forEach(b=>b.className='');q.className=o===+q.dataset.r?'ok':'no';const pi=cur();$('#sc').textContent=right(D[pi],pi);return}
+  if(q){if(GR[cur()])return;const o=+q.dataset.o;st[q.dataset.q]=o;save();q.parentNode.querySelectorAll('button').forEach(b=>b.className='');q.className='sel';return}
   if(e.target.id==='mk'){const t=makeText(),o=$('#out');o.value=t;o.select();
     const done=ok=>{$('#cp').textContent=ok?'✅ 복사됐어요! 붙여 넣기 하세요.':'위 글을 직접 선택해서 복사해 주세요.'};
     try{navigator.clipboard.writeText(t).then(()=>done(true),()=>{try{done(document.execCommand('copy'))}catch(x){done(false)}})}catch(x){try{done(document.execCommand('copy'))}catch(y){done(false)}}return}
-  if(e.target.id==='rs'){if(!window._rsA){window._rsA=1;e.target.textContent='정말 지워요? 한 번 더';setTimeout(()=>{window._rsA=0;const b=$('#rs');if(b)b.textContent='🔄 다시 풀기'},4000);return}window._rsA=0;const pi=cur();for(const k of Object.keys(st))if(k.startsWith('a'+pi)||k.startsWith('w'+pi))delete st[k];save();render();if(typeof push==='function')push();return}
+  if(e.target.id==='grd'){const pi=cur(),p=D[pi];let un=0;p.qs.forEach((s,si)=>s.i.forEach((it,k)=>{if(st['a'+pi+si+k]===undefined)un++}));
+    if(un>0&&!gArm){gArm=true;$('#gmsg').textContent='아직 안 푼 문제가 '+un+'개 있어요. 그래도 채점하려면 한 번 더 누르세요.';return}
+    gArm=false;GR[pi]=true;render();const g=$('#gsec');if(g)g.scrollIntoView({block:'center'});return}
+  if(e.target.id==='gre'){const pi=cur();for(const k of Object.keys(st))if(k.startsWith('a'+pi))delete st[k];GR[pi]=false;gArm=false;save();render();if(typeof push==='function')push();return}
+  if(e.target.id==='rs'){if(!window._rsA){window._rsA=1;e.target.textContent='정말 지워요? 한 번 더';setTimeout(()=>{window._rsA=0;const b=$('#rs');if(b)b.textContent='🔄 다시 풀기'},4000);return}window._rsA=0;const pi=cur();for(const k of Object.keys(st))if(k.startsWith('a'+pi)||k.startsWith('w'+pi))delete st[k];GR[pi]=false;save();render();if(typeof push==='function')push();return}
   const m=e.target.closest('[data-m]');
   if(m){$('#m'+m.dataset.m).classList.toggle('on')}
 });
